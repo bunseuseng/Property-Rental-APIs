@@ -31,6 +31,8 @@ public class UserEntity implements UserDetails {
 
     @Column(name = "full_name")
     private String fullName;
+    @Column(unique = true)
+    private String username;
 
     @Column(unique = true, nullable = false)
     private String email;
