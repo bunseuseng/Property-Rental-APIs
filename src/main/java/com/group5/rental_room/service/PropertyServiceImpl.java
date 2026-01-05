@@ -1,6 +1,7 @@
 package com.group5.rental_room.service;
 
 import com.group5.rental_room.dto.request.PropertyRequest;
+import com.group5.rental_room.dto.response.PropertyResponseDTO;
 import com.group5.rental_room.entity.PropertiesEntity;
 import com.group5.rental_room.entity.PropertyImageEntity;
 import com.group5.rental_room.entity.UserEntity;
@@ -49,4 +50,9 @@ public class PropertyServiceImpl implements PropertyService{
 
         return propertyRepository.save(MyProperty);
     }
+	@Override
+	public PropertyResponseDTO updateProperty(Long id, PropertyRequest request, String email) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
