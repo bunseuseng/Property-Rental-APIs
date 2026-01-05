@@ -9,9 +9,10 @@ import lombok.*;
 @Builder
 
 public class RegisterUserRequest {
-    private String name;
+    private String fullName;
     private String email;
     private String contactNumber;
     private String role;
+    private String gender;
     private String password;
 }

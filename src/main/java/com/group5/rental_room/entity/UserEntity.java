@@ -1,5 +1,6 @@
 package com.group5.rental_room.entity;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -23,6 +24,7 @@ import lombok.*;
 @Builder
 public class UserEntity implements UserDetails {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -31,17 +33,15 @@ public class UserEntity implements UserDetails {
 
     @Column(name = "full_name")
     private String fullName;
-    @Column(unique = true)
-    private String username;
 
     @Column(unique = true, nullable = false)
     private String email;
-
-    private String phone;
+    @Column(name = "phone")
+    private String contactNumber;
     
     @JsonIgnore
     private String password;
-    
+    @Column(name = "gender")
     private String gender;
     private String status; // e.g., "ACTIVE", "INACTIVE"
 
