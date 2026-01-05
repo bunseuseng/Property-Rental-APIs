@@ -57,7 +57,7 @@ public class PropertyServiceImpl implements PropertyService{
 	@Override
 	public PropertyResponseDTO updateProperty(Long id, PropertyRequest request, String email) {
 		// TODO Auto-generated method stub
-		
+
 		PropertiesEntity property = propertyRepository.findById(id)
 				.orElseThrow(()-> new ResourceNotFoundException("Property not found with this id" + id));
 		if(!property.getAgent().getEmail().equals(email)) {
@@ -78,7 +78,7 @@ public class PropertyServiceImpl implements PropertyService{
                      .build()
              )
        		  );
-         
+
          PropertiesEntity updated = propertyRepository.save(property);
          return PropertyMapper.toResponse(updated);	}
 }

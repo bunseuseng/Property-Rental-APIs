@@ -6,8 +6,10 @@ import com.group5.rental_room.dto.response.PropertyResponseDTO;
 import com.group5.rental_room.entity.PropertiesEntity;
 import com.group5.rental_room.entity.PropertyImageEntity;
 import com.group5.rental_room.entity.UserEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
+@Component
 
 public class PropertyMapper {
 
@@ -40,8 +42,10 @@ public class PropertyMapper {
     private static AgentDTO toAgentDTO (UserEntity userEntity){
         AgentDTO agentDtoResponse = new AgentDTO();
         agentDtoResponse.setId(userEntity.getId());
-        agentDtoResponse.setName(userEntity.getFullName());
+        agentDtoResponse.setFullName(userEntity.getFullName());
         agentDtoResponse.setEmail(userEntity.getEmail());
+        agentDtoResponse.setContactNumber(userEntity.getContactNumber());
+        agentDtoResponse.setGender(userEntity.getGender());
         return agentDtoResponse;
 
     }
