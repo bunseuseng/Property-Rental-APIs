@@ -3,8 +3,10 @@ package com.group5.rental_room.service;
 import java.util.HashMap;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import com.group5.rental_room.dto.response.AuthenticationResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,10 +45,11 @@ public class AuthenticationService {
     public APIsResponse<UserEntity> register(RegisterUserRequest registerDto) {
         // 1. Create the user object
         UserEntity user = UserEntity.builder()
-                .fullName(registerDto.getName())
+                .fullName(registerDto.getFullName())
                 .email(registerDto.getEmail())
                 .password(passwordEncoder.encode(registerDto.getPassword()))
-                .phone(registerDto.getContactNumber())
+                .contactNumber(registerDto.getContactNumber())
+                .gender(registerDto.getGender())
                 .status("ACTIVE")
                 .roles(new HashSet<>()) 
                 .build();
@@ -67,8 +70,10 @@ public class AuthenticationService {
 
         userReposiitory.save(user);
         
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
+//        var jwtToken = jwtService.generateToken(user);
+//        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
+        var jwtToken = jwtService.generateToken(user);           // Now uses UserEntity → includes userId
+        var refreshToken = jwtService.generateRefresh(user);     // Uses new clean version
 
         return APIsResponse.<UserEntity>builder()
                 .message("User registered successfully")
@@ -84,6 +89,9 @@ public class AuthenticationService {
 
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
+        List<String> rolesList = user.getRoles().stream() // use list string "role": ["USER", "AGENT"], from AuthenticationResponse
+                .map(r -> r.getName().name())
+                .collect(Collectors.toList());
 
         user.getRoles().add(role);
         userReposiitory.save(user);
@@ -92,14 +100,12 @@ public class AuthenticationService {
                 .message("Role assigned successfully")
                 .statusCode(200)
                 .userId(user.getId())
-                .role(user.getRoles().stream()
-                        .map((Role r) -> r.getName().name()) 
-                        .collect(Collectors.joining(", ")))
+                .role(rolesList)
                 .accessToken(jwtService.generateToken(user))
                 .build();
     }
     
-    public APIsResponse<UserEntity> authenticate(AuthenticationRequest authenticationRequest) {
+    public APIsResponse<AuthenticationResponse> authenticate(AuthenticationRequest authenticationRequest) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 authenticationRequest.getEmail(),
                 authenticationRequest.getPassword()));
@@ -109,19 +115,30 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
+//        String jwtToken = jwtService.generateToken(user);
+//        String refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
+        var jwtToken = jwtService.generateToken(user);           // Now uses UserEntity → includes userId
+        var refreshToken = jwtService.generateRefresh(user);     // Uses new clean version
 
-        String rolesString = user.getRoles().stream()
-                .map((Role r) -> r.getName().name()) 
-                .collect(Collectors.joining(","));
+        List<String> rolesList = user.getRoles().stream() // use list string "role": ["USER", "AGENT"], from AuthenticationResponse
+                .map(r -> r.getName().name())
+                .collect(Collectors.toList());
 
-        return APIsResponse.<UserEntity>builder()
-                .statusCode(HttpStatus.OK.value())
+        AuthenticationResponse response = AuthenticationResponse.builder()
+                .userId(user.getId())
+                .gender(user.getGender())
+                .contactNumber(user.getContactNumber())
+                .role(rolesList)
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
-                .role(rolesString) 
+                .role(rolesList)
                 .userId(user.getId())
+                .build();
+
+        return APIsResponse.<AuthenticationResponse>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Login successfully")
+                .data(response)
                 .build();
     }
 }
