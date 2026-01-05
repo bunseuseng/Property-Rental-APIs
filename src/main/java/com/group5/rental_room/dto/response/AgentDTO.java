@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AgentDTO {
 	private Long id;
-	private String name;
+	private String fullName;
 	private String email;
+    private String contactNumber;
+    private String gender;
 }
