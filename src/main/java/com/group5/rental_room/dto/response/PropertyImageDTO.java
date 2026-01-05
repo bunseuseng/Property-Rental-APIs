@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PropertyImageDTO {
 	 private Long id;
-	    private String imageUrl;
+	 private String imageUrl;
 }
