@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "properties")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
- class PropertiesEntity {
+public class PropertiesEntity {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -24,7 +24,9 @@ import lombok.NoArgsConstructor;
 	private String description;
 	private Double price;
 	private String location;
-	
+	private Double electricityPrice;
+	private Double  waterPrice;
+
 	@ManyToOne (fetch = FetchType.LAZY)
 	@JoinColumn(name = "agent-id", nullable= false )
 	private UserEntity agent;
