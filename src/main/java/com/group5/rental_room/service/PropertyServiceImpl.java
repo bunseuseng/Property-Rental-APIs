@@ -9,6 +9,8 @@ import com.group5.rental_room.entity.UserEntity;
 import com.group5.rental_room.repositpory.PropertyRepository;
 import com.group5.rental_room.repositpory.UserRepository;
 import com.group5.rental_room.exception.ResourceNotFoundException;
+import com.group5.rental_room.mapper.PropertyMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +80,5 @@ public class PropertyServiceImpl implements PropertyService{
        		  );
          
          PropertiesEntity updated = propertyRepository.save(property);
-         return null;
-	}
+         return PropertyMapper.toResponse(updated);	}
 }
