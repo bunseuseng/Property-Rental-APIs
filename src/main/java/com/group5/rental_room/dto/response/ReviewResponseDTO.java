@@ -10,7 +10,7 @@ public class ReviewResponseDTO {
 
     private Long reviewId;
     private int rating;
-    private String initialComment;
+    private String comment;
     private LocalDateTime createdAt;
     private Long userId;
     private String fullName;

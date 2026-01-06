@@ -51,7 +51,7 @@ public class ReviewServiceImpl implements ReviewService {
         return ReviewResponseDTO.builder()
                 .reviewId(review.getId())
                 .rating(review.getRating())
-                .initialComment(review.getComment())
+                .comment(review.getComment())
                 .createdAt(review.getCreatedAt())
                 .userId(user.getId())
                 .fullName(user.getFullName())

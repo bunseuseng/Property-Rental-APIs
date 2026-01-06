@@ -19,6 +19,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "reviews")
@@ -40,14 +42,15 @@ public class ReviewEntity {
 	    @JoinColumn(name = "user_id", nullable = false)
 	    private UserEntity user; // reviewer
 
-	    @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "property_id", nullable = false)
-	    private PropertiesEntity property;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "property_id", nullable = false)
+	private PropertiesEntity property;
 
-	    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
-	    @JsonIgnoreProperties("review")
-//	    private List<Comment> comments = new ArrayList<>();
+	@CreationTimestamp
+	@Column(name = "created_at", updatable = false)
+	private LocalDateTime createdAt;
 
-	    private LocalDateTime createdAt;
-	    private LocalDateTime updatedAt;
+	@UpdateTimestamp
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
 }

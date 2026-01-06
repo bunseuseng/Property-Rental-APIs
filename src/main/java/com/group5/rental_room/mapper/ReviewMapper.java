@@ -9,7 +9,7 @@ public class ReviewMapper {
         return ReviewResponseDTO.builder()
                 .reviewId(reviewEntity.getId())
                 .rating(reviewEntity.getRating())
-                .initialComment(reviewEntity.getComment())
+                .comment(reviewEntity.getComment())
                 .createdAt(reviewEntity.getCreatedAt())
                 .userId(reviewEntity.getUser().getId())
                 .fullName(reviewEntity.getUser().getFullName())
