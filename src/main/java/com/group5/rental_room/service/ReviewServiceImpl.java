@@ -1,9 +1,14 @@
 package com.group5.rental_room.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import com.group5.rental_room.dto.response.PaginatedResponse;
 import org.springframework.stereotype.Service;
-
 import com.group5.rental_room.dto.request.CreateReviewRequestDTO;
 import com.group5.rental_room.dto.response.ReviewResponseDTO;
 import com.group5.rental_room.entity.PropertiesEntity;
@@ -13,6 +18,7 @@ import com.group5.rental_room.exception.ResourceNotFoundException;
 import com.group5.rental_room.repositpory.PropertyRepository;
 import com.group5.rental_room.repositpory.ReviewRepository;
 import com.group5.rental_room.repositpory.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
@@ -58,5 +64,35 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
 
     }
-    
+
+    @Override
+    @Transactional(readOnly = true)
+
+    public PaginatedResponse<ReviewResponseDTO> getAllReviewsForAProperty(Long propertyId, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<ReviewEntity> myReviewPage = reviewRepository.findByPropertyId(propertyId, pageable);
+        List<ReviewResponseDTO> reviews = myReviewPage.getContent().stream().map(reviewEntity -> {
+            return ReviewResponseDTO.builder()
+                    .reviewId(reviewEntity.getId())
+                    .rating(reviewEntity.getRating())
+                    .comment(reviewEntity.getComment())
+                    .createdAt(reviewEntity.getCreatedAt())
+                    .userId(reviewEntity.getUser().getId())
+                    .fullName(reviewEntity.getUser().getFullName())
+                    .build();
+        }).toList();
+
+
+        return PaginatedResponse.<ReviewResponseDTO>builder()
+                .content(reviews)
+                .page(myReviewPage.getNumber())
+                .size(myReviewPage.getSize())
+                .totalElements(myReviewPage.getTotalElements()
+                )
+                .totalPages(myReviewPage.getTotalPages())
+                .last(myReviewPage.isLast())
+                .build();
+    }
+
 }
