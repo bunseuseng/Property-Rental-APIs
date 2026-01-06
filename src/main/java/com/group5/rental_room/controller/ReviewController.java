@@ -19,7 +19,7 @@ import java.util.Map;
 public class ReviewController {
 	  private final ReviewService reviewService;
 
-	    @PostMapping
+	    @PostMapping("/create")
 	    @PreAuthorize("hasRole('USER')")
 
 	    public ResponseEntity<ReviewResponseDTO> createReview (  @RequestBody CreateReviewRequestDTO request,
