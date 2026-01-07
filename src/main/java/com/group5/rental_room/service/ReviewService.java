@@ -1,11 +1,14 @@
 package com.group5.rental_room.service;
 
 import com.group5.rental_room.dto.request.CreateReviewRequestDTO;
-import com.group5.rental_room.dto.response.PaginatedResponse;
-import com.group5.rental_room.dto.response.ReviewResponseDTO;
+import com.group5.rental_room.dto.request.PropertyRequest;
+import com.group5.rental_room.dto.response.*;
 
 public interface ReviewService {
 
     ReviewResponseDTO createReview(CreateReviewRequestDTO request, String userEmail);
-    PaginatedResponse<ReviewResponseDTO> getAllReviewsForAProperty (Long propertyId, int page, int size);
+    PropertyReviewSummaryDTO
+    getAllReviewsForAProperty(Long propertyId, int page, int size);
+
+
 }

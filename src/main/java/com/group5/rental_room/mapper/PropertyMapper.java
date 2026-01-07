@@ -1,5 +1,6 @@
 package com.group5.rental_room.mapper;
 
+import com.group5.rental_room.dto.projection.PropertyReviewStats;
 import com.group5.rental_room.dto.response.AgentDTO;
 import com.group5.rental_room.dto.response.PropertyImageDTO;
 import com.group5.rental_room.dto.response.PropertyResponseDTO;
@@ -9,13 +10,23 @@ import com.group5.rental_room.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
-@Component
 
+@Component
 public class PropertyMapper {
 
-    public static PropertyResponseDTO toResponse (PropertiesEntity propertiesEntity){
+    // ✅ Old method (1 argument) stays if you need it
+    public static PropertyResponseDTO toResponse(PropertiesEntity propertiesEntity) {
+        return buildPropertyResponse(propertiesEntity, null);
+    }
 
-        PropertyResponseDTO  myProperty = new PropertyResponseDTO();
+    // ✅ New method (2 arguments) for averageRating & totalReviews
+    public static PropertyResponseDTO toResponse(PropertiesEntity propertiesEntity, PropertyReviewStats stats) {
+        return buildPropertyResponse(propertiesEntity, stats);
+    }
+
+    // 🔹 Common method to build the DTO
+    private static PropertyResponseDTO buildPropertyResponse(PropertiesEntity propertiesEntity, PropertyReviewStats stats) {
+        PropertyResponseDTO myProperty = new PropertyResponseDTO();
         myProperty.setId(propertiesEntity.getId());
         myProperty.setTitle(propertiesEntity.getTitle());
         myProperty.setDescription(propertiesEntity.getDescription());
@@ -25,7 +36,7 @@ public class PropertyMapper {
         myProperty.setWaterPrice(propertiesEntity.getWaterPrice());
         myProperty.setAgent(toAgentDTO(propertiesEntity.getAgent()));
 
-        if(propertiesEntity.getImages() !=null){
+        if (propertiesEntity.getImages() != null) {
             myProperty.setImages(
                     propertiesEntity.getImages()
                             .stream()
@@ -34,12 +45,22 @@ public class PropertyMapper {
             );
         }
 
-
+        // ✅ Add review stats if available
+        if (stats != null) {
+            Double avgRating = (stats.getAverageRating() != null)
+                    ? Math.round(stats.getAverageRating() * 10.0) / 10.0
+                    : 0.0;
+            myProperty.setAverageRating(avgRating);
+            myProperty.setTotalReviews(stats.getTotalReviews() != null ? stats.getTotalReviews() : 0L);
+        } else {
+            myProperty.setAverageRating(0.0);
+            myProperty.setTotalReviews(0L);
+        }
 
         return myProperty;
     }
 
-    private static AgentDTO toAgentDTO (UserEntity userEntity){
+    private static AgentDTO toAgentDTO(UserEntity userEntity) {
         AgentDTO agentDtoResponse = new AgentDTO();
         agentDtoResponse.setId(userEntity.getId());
         agentDtoResponse.setFullName(userEntity.getFullName());
@@ -47,16 +68,12 @@ public class PropertyMapper {
         agentDtoResponse.setContactNumber(userEntity.getContactNumber());
         agentDtoResponse.setGender(userEntity.getGender());
         return agentDtoResponse;
-
     }
 
-    private static PropertyImageDTO toImageDTO (PropertyImageEntity propertyImageEntity){
+    private static PropertyImageDTO toImageDTO(PropertyImageEntity propertyImageEntity) {
         PropertyImageDTO imageDtoResponse = new PropertyImageDTO();
         imageDtoResponse.setId(propertyImageEntity.getId());
         imageDtoResponse.setImageUrl(propertyImageEntity.getImageUrl());
-
-
         return imageDtoResponse;
     }
-
 }
