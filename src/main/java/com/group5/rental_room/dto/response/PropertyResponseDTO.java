@@ -16,6 +16,8 @@ public class PropertyResponseDTO {
     private Double electricityPrice;
     private Double  waterPrice; 
     private String location;
+    private Double averageRating;
+    private Long totalReviews;
     private AgentDTO agent; 
     private List<PropertyImageDTO> images;
 }
