@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import com.group5.rental_room.dto.request.PropertyRequest;
 import com.group5.rental_room.dto.response.*;
+import com.group5.rental_room.exception.BadRequestException;
+import com.group5.rental_room.exception.ConflictException;
 import com.group5.rental_room.mapper.PropertyMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,15 +37,17 @@ public class ReviewServiceImpl implements ReviewService {
     
     @Override
     public ReviewResponseDTO createReview(CreateReviewRequestDTO request, String userEmail) {
+        if (request.getRating() < 1 || request.getRating() > 5) {
+            throw new BadRequestException("You can only rate between 1 and 5");
+        }
     	UserEntity user = userRepository.findByEmail(userEmail);
     	PropertiesEntity property = propertyRepository.findById(request.getPropertyId())
     			.orElseThrow(()-> new ResourceNotFoundException("Property not found"));
     	
     	boolean alreadyReviewed = reviewRepository.existsByUserIdAndPropertyId(user.getId(), property.getId());
         // logic if that property has already reviewed
-        if(alreadyReviewed){
-            throw new ResourceNotFoundException("User already review this property");
-
+        if (alreadyReviewed) {
+            throw new ConflictException("User already reviewed this property");
         }
         
      // instance to create object by using builder
