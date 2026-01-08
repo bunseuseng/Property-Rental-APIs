@@ -8,6 +8,7 @@ import com.group5.rental_room.dto.request.RegisterUserRequest;
 import com.group5.rental_room.dto.request.AuthenticationRequest;
 import com.group5.rental_room.dto.request.RoleAssignRequest;
 import com.group5.rental_room.entity.UserEntity;
+import com.group5.rental_room.exception.BadRequestException;
 import com.group5.rental_room.repositpory.UserRepository;
 import com.group5.rental_room.service.AuthenticationService;
 
@@ -31,65 +32,33 @@ public class AuthenticationController {
 
     @SuppressWarnings("rawtypes")
     @PostMapping("/register")
-    public ResponseEntity<APIsResponse> postMethodName(@RequestBody RegisterUserRequest registerDto) {
-        try {
-            UserEntity userModel = userRepository.findByEmail(registerDto.getEmail());
-            
-            if (userModel == null) {
-                authenticationService.register(registerDto);
-                
-                APIsResponse apiResponse = APIsResponse.builder()
-                        .message("User registered successfully!")
-                        .statusCode(HttpStatus.CREATED.value()) // Use 201
-                        .build();
-                        
-                return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
-            } else {
-                // A duplicate email is a Conflict (409), not a Server Error (500)
-                APIsResponse apiResponse = APIsResponse.builder()
-                        .message("User with email already exists")
-                        .statusCode(HttpStatus.CONFLICT.value())
-                        .build();
-                        
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(apiResponse);
-            }
+    public ResponseEntity<APIsResponse<?>> register(@RequestBody RegisterUserRequest registerDto) {
+        // ✅ Check duplicate email → throw BadRequestException (400)
+        if (userRepository.existsByEmail(registerDto.getEmail())) {
+            throw new BadRequestException("User with email already exists"); // <<< NEW LINE
+        }
 
-        } catch (Exception ex) {
-            APIsResponse apiResponse = APIsResponse.builder()
-                    .message("Failed: " + ex.getMessage())
-                    .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                    .build();
-                    
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-        }
+        // ✅ Call service normally, no try/catch needed
+        APIsResponse<?> response = authenticationService.register(registerDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response); // 201 Created
     }
+
     @PostMapping("/assign-role")
-    public ResponseEntity<APIsResponse<UserEntity>> assignRole(@RequestBody RoleAssignRequest request) {
-        try {
-            APIsResponse<UserEntity> response = authenticationService.assignRoleToUser(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception ex) {
-            // Return a parameterized ApiResponse even in case of error
-            APIsResponse<UserEntity> errorResponse = APIsResponse.<UserEntity>builder()
-                    .message("Failed: " + ex.getMessage())
-                    .statusCode(HttpStatus.BAD_REQUEST.value())
-                    .build();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
+    public ResponseEntity<APIsResponse<?>> assignRole(@RequestBody RoleAssignRequest request) {
+        // ✅ service throws ResourceNotFoundException or BadRequestException as needed
+        APIsResponse<?> response = authenticationService.assignRoleToUser(request);
+        return ResponseEntity.ok(response); // 200 OK
     }
+
 
     @SuppressWarnings("rawtypes")
-	@PostMapping("/authenticate")
-    public ResponseEntity<APIsResponse> postMethodName(@RequestBody AuthenticationRequest authenticationRequest) {
-        try {
-            APIsResponse res = authenticationService.authenticate(authenticationRequest);
-            return ResponseEntity.ok(res);
-        } catch (Exception ex) {
-            APIsResponse apiResponse = APIsResponse.builder().message("Failed: " + ex.getMessage())
-                    .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-
-        }
+    @PostMapping("/authenticate")
+    public ResponseEntity<APIsResponse<?>> authenticate(@RequestBody AuthenticationRequest request) {
+        // ✅ service will throw UnauthorizedException for invalid credentials
+        APIsResponse<?> response = authenticationService.authenticate(request);
+        return ResponseEntity.ok(response); // 200 OK
     }
+
 
 }

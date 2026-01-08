@@ -18,6 +18,9 @@ import com.group5.rental_room.dto.request.AuthenticationRequest;
 import com.group5.rental_room.dto.request.RegisterUserRequest;
 import com.group5.rental_room.dto.request.RoleAssignRequest;
 import com.group5.rental_room.enums.enums;
+import com.group5.rental_room.exception.BadRequestException;
+import com.group5.rental_room.exception.ResourceNotFoundException;
+import com.group5.rental_room.exception.UnauthorizedException;
 import com.group5.rental_room.entity.UserEntity;
 import com.group5.rental_room.entity.Role;
 import com.group5.rental_room.repositpory.RoleRepository;
@@ -42,103 +45,119 @@ public class AuthenticationService {
     }
 	@Transactional // This ensures the data is actually written to the DB
 
-    public APIsResponse<UserEntity> register(RegisterUserRequest registerDto) {
-        // 1. Create the user object
-        UserEntity user = UserEntity.builder()
-                .fullName(registerDto.getFullName())
-                .email(registerDto.getEmail())
-                .password(passwordEncoder.encode(registerDto.getPassword()))
-                .contactNumber(registerDto.getContactNumber())
-                .gender(registerDto.getGender())
-                .status("ACTIVE")
-                .roles(new HashSet<>()) 
-                .build();
+	public APIsResponse<UserEntity> register(RegisterUserRequest registerDto) {
+	    // 1. Check duplicate email
+	    if (userReposiitory.existsByEmail(registerDto.getEmail())) {
+	        throw new BadRequestException("User with email already exists"); // <<< NEW
+	    }
 
-        // 2. Assign default USER role
-        Role userRole = roleRepository.findByName(enums.USER);
-        if (userRole != null) {
-            user.getRoles().add(userRole);
-        }
+	    // 2. Build user
+	    UserEntity user = UserEntity.builder()
+	            .fullName(registerDto.getFullName())
+	            .email(registerDto.getEmail())
+	            .password(passwordEncoder.encode(registerDto.getPassword()))
+	            .contactNumber(registerDto.getContactNumber())
+	            .gender(registerDto.getGender())
+	            .status("ACTIVE")
+	            .roles(new HashSet<>())
+	            .build();
 
-        // 3. Assign AGENT role if requested
-        if (registerDto.getRole() != null && "AGENT".equalsIgnoreCase(registerDto.getRole())) {
-            Role agentRole = roleRepository.findByName(enums.AGENT);
-            if (agentRole != null) {
-                user.getRoles().add(agentRole);
-            }
-        }
+	    // 3. Assign roles
+	    Role userRole = roleRepository.findByName(enums.USER);
+	    if (userRole != null) user.getRoles().add(userRole);
 
-        userReposiitory.save(user);
-        
-//        var jwtToken = jwtService.generateToken(user);
-//        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
-        var jwtToken = jwtService.generateToken(user);           // Now uses UserEntity → includes userId
-        var refreshToken = jwtService.generateRefresh(user);     // Uses new clean version
+	    if ("AGENT".equalsIgnoreCase(registerDto.getRole())) {
+	        Role agentRole = roleRepository.findByName(enums.AGENT);
+	        if (agentRole != null) user.getRoles().add(agentRole);
+	    }
 
-        return APIsResponse.<UserEntity>builder()
-                .message("User registered successfully")
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .statusCode(HttpStatus.CREATED.value())
-                .build();
-    }
+	    userReposiitory.save(user);
 
-    public APIsResponse<UserEntity> assignRoleToUser(RoleAssignRequest request) {
-        UserEntity user = userReposiitory.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+	    var jwtToken = jwtService.generateToken(user);
+	    var refreshToken = jwtService.generateRefresh(user);
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
-        List<String> rolesList = user.getRoles().stream() // use list string "role": ["USER", "AGENT"], from AuthenticationResponse
-                .map(r -> r.getName().name())
-                .collect(Collectors.toList());
+	    return APIsResponse.<UserEntity>builder()
+	            .message("User registered successfully")
+	            .statusCode(HttpStatus.CREATED.value())
+	            .accessToken(jwtToken)
+	            .refreshToken(refreshToken)
+	            .build();
+	}
 
-        user.getRoles().add(role);
-        userReposiitory.save(user);
 
-        return APIsResponse.<UserEntity>builder()
-                .message("Role assigned successfully")
-                .statusCode(200)
-                .userId(user.getId())
-                .role(rolesList)
-                .accessToken(jwtService.generateToken(user))
-                .build();
-    }
+	public APIsResponse<UserEntity> assignRoleToUser(RoleAssignRequest request) {
+	    UserEntity user = userReposiitory.findById(request.getUserId())
+	            .orElseThrow(() -> new ResourceNotFoundException("User not found")); // <<< UPDATED
+
+	    Role role = roleRepository.findById(request.getRoleId())
+	            .orElseThrow(() -> new ResourceNotFoundException("Role not found")); // <<< UPDATED
+
+	    if (user.getRoles().contains(role)) {
+	        throw new BadRequestException("User already has this role assigned"); // <<< NEW
+	    }
+
+	    user.getRoles().add(role);
+	    userReposiitory.save(user);
+
+	    List<String> rolesList = user.getRoles().stream()
+	            .map(r -> r.getName().name())
+	            .collect(Collectors.toList());
+
+	    return APIsResponse.<UserEntity>builder()
+	            .message("Role assigned successfully")
+	            .statusCode(HttpStatus.OK.value())
+	            .userId(user.getId())
+	            .role(rolesList)
+	            .accessToken(jwtService.generateToken(user))
+	            .build();
+	}
     
-    public APIsResponse<AuthenticationResponse> authenticate(AuthenticationRequest authenticationRequest) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                authenticationRequest.getEmail(),
-                authenticationRequest.getPassword()));
+	public APIsResponse<AuthenticationResponse> authenticate(AuthenticationRequest authenticationRequest) {
 
-        UserEntity user = userReposiitory.findByEmail(authenticationRequest.getEmail());
-        if (user == null) {
-            throw new IllegalArgumentException("Invalid email or password");
-        }
+	    try {
+	        // ✅ Authenticate with Spring Security
+	        authenticationManager.authenticate(
+	                new UsernamePasswordAuthenticationToken(
+	                        authenticationRequest.getEmail(),
+	                        authenticationRequest.getPassword()
+	                )
+	        );
+	    } catch (Exception ex) {
+	        // <<< NEW: If authentication fails, throw custom exception
+	        throw new UnauthorizedException("Invalid email or password"); // 401
+	    }
 
-//        String jwtToken = jwtService.generateToken(user);
-//        String refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
-        var jwtToken = jwtService.generateToken(user);           // Now uses UserEntity → includes userId
-        var refreshToken = jwtService.generateRefresh(user);     // Uses new clean version
+	    // ✅ Find user by email
+	    UserEntity user = userReposiitory.findByEmail(authenticationRequest.getEmail());
+	    if (user == null) {
+	        throw new UnauthorizedException("Invalid email or password"); // <<< NEW
+	    }
 
-        List<String> rolesList = user.getRoles().stream() // use list string "role": ["USER", "AGENT"], from AuthenticationResponse
-                .map(r -> r.getName().name())
-                .collect(Collectors.toList());
+	    // ✅ Generate JWT tokens
+	    var jwtToken = jwtService.generateToken(user);
+	    var refreshToken = jwtService.generateRefresh(user);
 
-        AuthenticationResponse response = AuthenticationResponse.builder()
-                .userId(user.getId())
-                .gender(user.getGender())
-                .contactNumber(user.getContactNumber())
-                .role(rolesList)
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .role(rolesList)
-                .userId(user.getId())
-                .build();
+	    // ✅ Map roles to list of strings
+	    List<String> rolesList = user.getRoles().stream()
+	            .map(r -> r.getName().name())
+	            .collect(Collectors.toList());
 
-        return APIsResponse.<AuthenticationResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Login successfully")
-                .data(response)
-                .build();
-    }
+	    // ✅ Build AuthenticationResponse
+	    AuthenticationResponse response = AuthenticationResponse.builder()
+	            .userId(user.getId())
+	            .gender(user.getGender())
+	            .contactNumber(user.getContactNumber())
+	            .role(rolesList)
+	            .accessToken(jwtToken)
+	            .refreshToken(refreshToken)
+	            .build();
+
+	    // ✅ Wrap in APIsResponse
+	    return APIsResponse.<AuthenticationResponse>builder()
+	            .statusCode(HttpStatus.OK.value())
+	            .message("Login successfully")
+	            .data(response)
+	            .build();
+	}
+
 }
