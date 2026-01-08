@@ -2,6 +2,7 @@ package com.group5.rental_room.controller;
 
 import com.group5.rental_room.dto.response.PaginatedResponse;
 import com.group5.rental_room.dto.response.PropertyReviewSummaryDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,7 +25,7 @@ public class ReviewController {
 	    @PostMapping("/create")
 	    @PreAuthorize("hasRole('USER')")
 
-	    public ResponseEntity<ReviewResponseDTO> createReview (  @RequestBody CreateReviewRequestDTO request,
+	    public ResponseEntity<ReviewResponseDTO> createReview (@Valid @RequestBody CreateReviewRequestDTO request,
 	                                                             Authentication authentication){
 	      String email = authentication.getName();
 
