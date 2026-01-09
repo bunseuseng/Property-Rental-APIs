@@ -17,23 +17,25 @@ import org.springframework.security.core.Authentication;
 import java.util.LinkedHashMap;
 import java.util.Map;
 @RestController
-@RequestMapping("/api/reviews")
+@RequestMapping("/api/v1/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 	  private final ReviewService reviewService;
 
-	    @PostMapping("/create")
+
+        // Create review
+	    @PostMapping
 	    @PreAuthorize("hasRole('USER')")
 
-	    public ResponseEntity<ReviewResponseDTO> createReview (@Valid @RequestBody CreateReviewRequestDTO request,
-	                                                             Authentication authentication){
-	      String email = authentication.getName();
+	    public ResponseEntity<ReviewResponseDTO> createReview (@Valid @RequestBody CreateReviewRequestDTO request, Authentication authentication){
 
-	        return ResponseEntity.ok(reviewService.createReview(request, email));
+            String name = authentication.getName();
+
+	        return ResponseEntity.ok(reviewService.createReview(request, name));
 	    }
 
-    @GetMapping("/properties/{propertyId}/reviews")
-    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/{propertyId}")
+//    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Map<String, Object>> getAllReviewsByAProperty(
             @PathVariable Long propertyId,
             @RequestParam(defaultValue = "0") int page,
@@ -46,20 +48,21 @@ public class ReviewController {
                 result.getReviews();
 
         int currentPage = page + 1;
-
+        // mapping
         Map<String, Object> dataMap = new LinkedHashMap<>();
         dataMap.put("propertyId", result.getPropertyId());
         dataMap.put("averageRating", result.getAverageRating());
         dataMap.put("totalReviews", result.getTotalReviews());
         dataMap.put("reviews", paginatedReviews.getContent());
 
+        // pagination
         Map<String, Object> paginationMap = new LinkedHashMap<>();
         paginationMap.put("page", currentPage);
         paginationMap.put("size", paginatedReviews.getSize());
         paginationMap.put("totalElements", paginatedReviews.getTotalElements());
         paginationMap.put("totalPages", paginatedReviews.getTotalPages());
         paginationMap.put("last", paginatedReviews.isLast());
-
+        // response
         Map<String, Object> responseMap = new LinkedHashMap<>();
         responseMap.put("success", true);
         responseMap.put("message", "Get all reviews from this property fetched successfully");

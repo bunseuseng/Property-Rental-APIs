@@ -75,7 +75,10 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public PropertyReviewSummaryDTO getAllReviewsForAProperty(
             Long propertyId, int page, int size) {
-
+        // Check if property exists
+        if (!propertyRepository.existsById(propertyId)) {
+            throw new ResourceNotFoundException("Property not found with id " + propertyId);
+        }
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<ReviewEntity> myReviewPage =
