@@ -23,6 +23,9 @@ public class SecurityConfiguration {
 
         private final JwtAuthenticationFilter jwtAuthFilter;
         private final AuthenticationProvider authenticationProvider;
+        private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+        private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,7 +36,9 @@ public class SecurityConfiguration {
                             .requestMatchers(
                                 "/api/v1/auth-service/register", 
                                 "/api/v1/auth-service/authenticate",
-                                "/instances"
+                                "/instances",
+                                    "/api/v1/reviews/*",
+                                    "/api/v1/properties"
                             ).permitAll()
                             
                             .requestMatchers("/api/v1/auth-service/assign-role").authenticated()
@@ -44,8 +49,12 @@ public class SecurityConfiguration {
                     .sessionManagement(manager -> manager
                             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authenticationProvider(authenticationProvider)
-                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
+                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                    // This is where the injection so here
+                    .exceptionHandling(ex -> ex
+                            .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                            .accessDeniedHandler(jwtAccessDeniedHandler)
+                    );
             return http.build();
         }
 

@@ -22,8 +22,8 @@ public class PropertyController {
 
  private final PropertyService propertyService;
 
-
-    @PostMapping("/create")
+     // Create property
+    @PostMapping
     @PreAuthorize("hasRole('AGENT')")
     public ResponseEntity<PropertyResponseDTO> create(@RequestBody PropertyRequest request, Principal principal) {
         // Create the property
@@ -44,8 +44,8 @@ PropertyResponseDTO updateById = propertyService.updateProperty(id, request, pri
     	
     	return ResponseEntity.ok(updateById);
     }
-    @GetMapping("/all")    //
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping
+//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public HttpEntity<ListResponseDTO<PropertyResponseDTO>> getAllPropertiesForUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
